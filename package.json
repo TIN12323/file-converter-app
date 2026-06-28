@@ -1,5 +1,5 @@
 {
-  "name": "tinpdf-sdk54-fresh",
+  "name": "tinpdf",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
