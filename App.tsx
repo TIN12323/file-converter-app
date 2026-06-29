@@ -1,6 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
+import * as ImagePicker from 'expo-image-picker';
 import { useMemo, useState } from 'react';
 import {
+  Alert,
+  Image,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -26,6 +29,14 @@ type Tool = {
   mark: string;
   accent: string;
   status: ToolStatus;
+};
+
+type SelectedImage = {
+  id: string;
+  uri: string;
+  width: number;
+  height: number;
+  fileName?: string | null;
 };
 
 const tabs: TabItem[] = [
@@ -92,10 +103,52 @@ const bottomSystemGap = Platform.OS === 'android' ? 24 : 10;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
+  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
 
   const screenTitle = useMemo(() => {
     return tabs.find((tab) => tab.key === activeTab)?.label ?? 'Trang chủ';
   }, [activeTab]);
+
+  const pickImages = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        'Cần quyền truy cập ảnh',
+        'TinPDF cần quyền mở thư viện ảnh để bạn chọn ảnh tạo PDF.',
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      orderedSelection: true,
+      quality: 0.92,
+      selectionLimit: 20,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const images = result.assets.map((asset, index) => ({
+      id: `${asset.assetId ?? asset.uri}-${Date.now()}-${index}`,
+      uri: asset.uri,
+      width: asset.width,
+      height: asset.height,
+      fileName: asset.fileName,
+    }));
+
+    setSelectedImages(images);
+    setActiveTab('scan');
+  };
+
+  const removeSelectedImage = (imageId: string) => {
+    setSelectedImages((currentImages) =>
+      currentImages.filter((image) => image.id !== imageId),
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -125,7 +178,14 @@ export default function App() {
           {activeTab === 'home' && <HomeScreen onStart={() => setActiveTab('scan')} />}
           {activeTab === 'tools' && <ToolsScreen onStart={() => setActiveTab('scan')} />}
           {activeTab === 'files' && <FilesScreen />}
-          {activeTab === 'scan' && <ScanScreen />}
+          {activeTab === 'scan' && (
+            <ScanScreen
+              images={selectedImages}
+              onPickImages={pickImages}
+              onRemoveImage={removeSelectedImage}
+              onClearImages={() => setSelectedImages([])}
+            />
+          )}
           {activeTab === 'settings' && <SettingsScreen />}
         </ScrollView>
 
@@ -272,7 +332,19 @@ function FilesScreen() {
   );
 }
 
-function ScanScreen() {
+function ScanScreen({
+  images,
+  onPickImages,
+  onRemoveImage,
+  onClearImages,
+}: {
+  images: SelectedImage[];
+  onPickImages: () => void;
+  onRemoveImage: (imageId: string) => void;
+  onClearImages: () => void;
+}) {
+  const hasImages = images.length > 0;
+
   return (
     <View style={styles.screen}>
       <PageIntro
@@ -292,11 +364,51 @@ function ScanScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.primaryButtonWide} activeOpacity={0.88}>
+        <TouchableOpacity
+          style={styles.primaryButtonWide}
+          activeOpacity={0.88}
+          onPress={onPickImages}
+        >
           <Text style={styles.heroButtonMark}>+</Text>
-          <Text style={styles.primaryButtonText}>Chọn ảnh từ thư viện</Text>
+          <Text style={styles.primaryButtonText}>
+            {hasImages ? 'Chọn lại ảnh' : 'Chọn ảnh từ thư viện'}
+          </Text>
         </TouchableOpacity>
       </View>
+
+      {hasImages && (
+        <View style={styles.selectedPanel}>
+          <View style={styles.selectedHeader}>
+            <View>
+              <Text style={styles.selectedTitle}>Ảnh đã chọn</Text>
+              <Text style={styles.selectedMeta}>
+                {images.length} ảnh sẵn sàng cho bước tạo PDF
+              </Text>
+            </View>
+            <TouchableOpacity activeOpacity={0.82} onPress={onClearImages}>
+              <Text style={styles.clearAction}>Xóa hết</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.imageGrid}>
+            {images.map((image, index) => (
+              <View key={image.id} style={styles.imageTile}>
+                <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+                <View style={styles.imageIndex}>
+                  <Text style={styles.imageIndexText}>{index + 1}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  activeOpacity={0.82}
+                  onPress={() => onRemoveImage(image.id)}
+                >
+                  <Text style={styles.removeImageText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
       <View style={styles.workflowPanel}>
         <Step number="1" title="Chọn ảnh" detail="Lấy một hoặc nhiều ảnh từ thư viện." />
@@ -911,6 +1023,93 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: '#ffffff',
     fontSize: 16,
+    fontWeight: '900',
+  },
+  selectedPanel: {
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    borderColor: '#eadfd8',
+    borderWidth: 1,
+    padding: 14,
+    gap: 14,
+    shadowColor: '#6b5f5a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  selectedHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  selectedTitle: {
+    color: '#10131c',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  selectedMeta: {
+    color: '#7d746f',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 3,
+    fontWeight: '700',
+  },
+  clearAction: {
+    color: '#e11d48',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  imageTile: {
+    width: '31.3%',
+    aspectRatio: 0.76,
+    borderRadius: 8,
+    backgroundColor: '#f4eee9',
+    overflow: 'hidden',
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imageIndex: {
+    position: 'absolute',
+    left: 6,
+    top: 6,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: '#10131c',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  imageIndexText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    right: 6,
+    top: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: '#e11d48',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeImageText: {
+    color: '#ffffff',
+    fontSize: 18,
+    lineHeight: 20,
     fontWeight: '900',
   },
   workflowPanel: {
