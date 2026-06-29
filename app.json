@@ -12,6 +12,16 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TinPDF cần quyền truy cập ảnh để chọn ảnh tạo PDF.",
+          "cameraPermission": "TinPDF cần quyền camera để chụp giấy tờ tạo PDF.",
+          "microphonePermission": false
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true
     },
