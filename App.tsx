@@ -1,9 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
 import {
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  StatusBar as NativeStatusBar,
   Text,
   TouchableOpacity,
   View,
@@ -65,6 +67,10 @@ const tools: Tool[] = [
   },
 ];
 
+const androidStatusBarHeight =
+  Platform.OS === 'android' ? NativeStatusBar.currentHeight ?? 0 : 0;
+const bottomSystemGap = Platform.OS === 'android' ? 24 : 10;
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
 
@@ -74,7 +80,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+      <StatusBar style="dark" backgroundColor="#f2f4f8" />
       <View style={styles.appShell}>
         <View style={styles.header}>
           <View>
@@ -316,15 +322,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#f2f4f8',
+    paddingTop: androidStatusBarHeight,
   },
   appShell: {
     flex: 1,
     backgroundColor: '#f2f4f8',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    paddingTop: 8,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    paddingTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -359,7 +366,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 24,
   },
   screen: {
@@ -667,10 +674,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   tabBar: {
-    minHeight: 76,
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingHorizontal: 4,
+    minHeight: 84 + bottomSystemGap,
+    paddingTop: 10,
+    paddingBottom: bottomSystemGap,
+    paddingHorizontal: 8,
     backgroundColor: '#ffffff',
     borderTopColor: '#d8dee9',
     borderTopWidth: 1,
@@ -679,7 +686,7 @@ const styles = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 4,
   },
   tabIcon: {
