@@ -12,59 +12,78 @@ import {
 } from 'react-native';
 
 type TabKey = 'home' | 'tools' | 'files' | 'scan' | 'settings';
+type ToolStatus = 'ready' | 'soon';
+
+type TabItem = {
+  key: TabKey;
+  label: string;
+  mark: string;
+};
 
 type Tool = {
   title: string;
   subtitle: string;
+  mark: string;
   accent: string;
-  status: 'ready' | 'soon';
+  status: ToolStatus;
 };
 
-const tabs: Array<{ key: TabKey; label: string; icon: string }> = [
-  { key: 'home', label: 'Trang chủ', icon: '⌂' },
-  { key: 'tools', label: 'Công cụ', icon: '▦' },
-  { key: 'files', label: 'Tệp', icon: '□' },
-  { key: 'scan', label: 'Quét', icon: '◇' },
-  { key: 'settings', label: 'Cài đặt', icon: '⚙' },
+const tabs: TabItem[] = [
+  { key: 'home', label: 'Trang chủ', mark: 'H' },
+  { key: 'tools', label: 'Công cụ', mark: 'T' },
+  { key: 'files', label: 'Tệp', mark: 'F' },
+  { key: 'scan', label: 'Quét', mark: '+' },
+  { key: 'settings', label: 'Cài đặt', mark: 'S' },
 ];
 
 const tools: Tool[] = [
   {
     title: 'Ảnh sang PDF',
-    subtitle: 'Chọn nhiều ảnh và tạo PDF',
-    accent: '#dc2626',
+    subtitle: 'Tạo PDF từ nhiều ảnh',
+    mark: 'IMG',
+    accent: '#e11d48',
     status: 'ready',
   },
   {
     title: 'PDF sang ảnh',
-    subtitle: 'Sắp có ở bản sau',
+    subtitle: 'Xuất từng trang thành ảnh',
+    mark: 'JPG',
     accent: '#2563eb',
     status: 'soon',
   },
   {
     title: 'Nén PDF',
     subtitle: 'Giảm dung lượng file',
-    accent: '#16a34a',
+    mark: 'ZIP',
+    accent: '#059669',
     status: 'soon',
   },
   {
     title: 'Nối PDF',
-    subtitle: 'Gộp nhiều PDF thành một',
+    subtitle: 'Gộp nhiều file PDF',
+    mark: 'ADD',
     accent: '#7c3aed',
     status: 'soon',
   },
   {
     title: 'Tách PDF',
-    subtitle: 'Tách trang từ file PDF',
+    subtitle: 'Lấy trang cần dùng',
+    mark: 'CUT',
     accent: '#ea580c',
     status: 'soon',
   },
   {
     title: 'Xoay PDF',
-    subtitle: 'Chỉnh hướng trang PDF',
+    subtitle: 'Chỉnh hướng trang',
+    mark: '90',
     accent: '#0891b2',
     status: 'soon',
   },
+];
+
+const recentPlaceholders = [
+  { title: 'Chưa có PDF', meta: 'File đã tạo sẽ xuất hiện tại đây' },
+  { title: 'A4 dọc', meta: 'Thiết lập mặc định' },
 ];
 
 const androidStatusBarHeight =
@@ -75,19 +94,25 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('home');
 
   const screenTitle = useMemo(() => {
-    return tabs.find((tab) => tab.key === activeTab)?.label ?? 'TinPDF';
+    return tabs.find((tab) => tab.key === activeTab)?.label ?? 'Trang chủ';
   }, [activeTab]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" backgroundColor="#f2f4f8" />
+      <StatusBar style="dark" backgroundColor="#f7f3ef" />
       <View style={styles.appShell}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.logo}>TinPDF</Text>
-            <Text style={styles.headerSubtitle}>{screenTitle}</Text>
+          <View style={styles.brandGroup}>
+            <View style={styles.brandMark}>
+              <Text style={styles.brandMarkText}>TP</Text>
+            </View>
+            <View>
+              <Text style={styles.logo}>TinPDF</Text>
+              <Text style={styles.headerSubtitle}>{screenTitle}</Text>
+            </View>
           </View>
-          <TouchableOpacity style={styles.profileButton} activeOpacity={0.8}>
+
+          <TouchableOpacity style={styles.profileButton} activeOpacity={0.82}>
             <Text style={styles.profileInitial}>T</Text>
           </TouchableOpacity>
         </View>
@@ -104,26 +129,30 @@ export default function App() {
           {activeTab === 'settings' && <SettingsScreen />}
         </ScrollView>
 
-        <View style={styles.tabBar}>
-          {tabs.map((tab) => {
-            const isActive = tab.key === activeTab;
+        <View style={styles.tabWrap}>
+          <View style={styles.tabBar}>
+            {tabs.map((tab) => {
+              const isActive = tab.key === activeTab;
 
-            return (
-              <TouchableOpacity
-                key={tab.key}
-                style={styles.tabItem}
-                activeOpacity={0.8}
-                onPress={() => setActiveTab(tab.key)}
-              >
-                <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
-                  {tab.icon}
-                </Text>
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={styles.tabItem}
+                  activeOpacity={0.82}
+                  onPress={() => setActiveTab(tab.key)}
+                >
+                  <View style={[styles.tabMark, isActive && styles.tabMarkActive]}>
+                    <Text style={[styles.tabMarkText, isActive && styles.tabMarkTextActive]}>
+                      {tab.mark}
+                    </Text>
+                  </View>
+                  <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -133,45 +162,55 @@ export default function App() {
 function HomeScreen({ onStart }: { onStart: () => void }) {
   return (
     <View style={styles.screen}>
-      <View style={styles.searchBox}>
-        <Text style={styles.searchText}>Tìm kiếm công cụ hoặc file</Text>
-      </View>
-
-      <View style={styles.primaryPanel}>
-        <View style={styles.primaryIcon}>
-          <Text style={styles.primaryIconText}>PDF</Text>
+      <View style={styles.heroCard}>
+        <View style={styles.heroTopLine}>
+          <Text style={styles.heroKicker}>PDF Studio</Text>
+          <View style={styles.heroBadge}>
+            <Text style={styles.heroBadgeText}>Offline</Text>
+          </View>
         </View>
-        <View style={styles.primaryCopy}>
-          <Text style={styles.sectionEyebrow}>Tác vụ chính</Text>
-          <Text style={styles.primaryTitle}>Tạo PDF từ ảnh</Text>
-          <Text style={styles.primaryDescription}>
-            Chọn ảnh giấy tờ, hóa đơn hoặc bài học và chuyển thành một file PDF gọn gàng.
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={onStart}>
-          <Text style={styles.primaryButtonIcon}>+</Text>
-          <Text style={styles.primaryButtonText}>Chọn ảnh</Text>
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Tệp gần đây</Text>
-        <Text style={styles.sectionAction}>Xem tất cả</Text>
-      </View>
-
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyTitle}>Chưa có PDF nào</Text>
-        <Text style={styles.emptyDescription}>
-          Sau khi tạo file đầu tiên, lịch sử sẽ xuất hiện ở đây để bạn mở lại nhanh.
+        <Text style={styles.heroTitle}>Biến ảnh thành PDF chỉ trong vài chạm</Text>
+        <Text style={styles.heroText}>
+          Tạo file gọn, đẹp và sẵn sàng chia sẻ cho học tập, công việc hoặc giấy tờ cá nhân.
         </Text>
+
+        <TouchableOpacity style={styles.heroButton} activeOpacity={0.88} onPress={onStart}>
+          <Text style={styles.heroButtonMark}>+</Text>
+          <Text style={styles.heroButtonText}>Tạo PDF mới</Text>
+        </TouchableOpacity>
+
+        <View style={styles.heroDecorOne} />
+        <View style={styles.heroDecorTwo} />
       </View>
 
-      <Text style={styles.sectionTitle}>Lối tắt</Text>
-      <View style={styles.shortcutGrid}>
-        <Shortcut title="Ảnh sang PDF" tone="#dc2626" onPress={onStart} />
-        <Shortcut title="PDF sang ảnh" tone="#2563eb" disabled />
-        <Shortcut title="Nén PDF" tone="#16a34a" disabled />
-        <Shortcut title="Nối PDF" tone="#7c3aed" disabled />
+      <View style={styles.metricRow}>
+        <Metric label="File đã tạo" value="0" />
+        <Metric label="Mặc định" value="A4" />
+        <Metric label="Bảo mật" value="Local" />
+      </View>
+
+      <SectionHeader title="Tác vụ nhanh" action="Tất cả" />
+      <View style={styles.quickGrid}>
+        <QuickAction title="Ảnh sang PDF" mark="IMG" tone="#e11d48" onPress={onStart} />
+        <QuickAction title="PDF sang ảnh" mark="JPG" tone="#2563eb" disabled />
+        <QuickAction title="Nén PDF" mark="ZIP" tone="#059669" disabled />
+        <QuickAction title="Nối PDF" mark="ADD" tone="#7c3aed" disabled />
+      </View>
+
+      <SectionHeader title="Tệp gần đây" action="Xem tất cả" />
+      <View style={styles.recentList}>
+        {recentPlaceholders.map((item) => (
+          <View key={item.title} style={styles.recentItem}>
+            <View style={styles.recentThumb}>
+              <Text style={styles.recentThumbText}>PDF</Text>
+            </View>
+            <View style={styles.recentCopy}>
+              <Text style={styles.recentTitle}>{item.title}</Text>
+              <Text style={styles.recentMeta}>{item.meta}</Text>
+            </View>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -180,25 +219,30 @@ function HomeScreen({ onStart }: { onStart: () => void }) {
 function ToolsScreen({ onStart }: { onStart: () => void }) {
   return (
     <View style={styles.screen}>
-      <Text style={styles.pageTitle}>Công cụ PDF</Text>
-      <Text style={styles.pageDescription}>
-        Bản đầu tập trung làm ảnh sang PDF thật ổn. Các công cụ còn lại sẽ được mở dần.
-      </Text>
+      <PageIntro
+        eyebrow="Bộ công cụ"
+        title="Tập trung vào những thao tác PDF hay dùng nhất"
+        description="TinPDF mở từng công cụ theo từng mốc để app luôn nhẹ, dễ dùng và ổn định."
+      />
 
       <View style={styles.toolsGrid}>
         {tools.map((tool) => (
           <TouchableOpacity
             key={tool.title}
             style={styles.toolCard}
-            activeOpacity={tool.status === 'ready' ? 0.85 : 1}
+            activeOpacity={tool.status === 'ready' ? 0.86 : 1}
             onPress={tool.status === 'ready' ? onStart : undefined}
           >
             <View style={[styles.toolIcon, { backgroundColor: tool.accent }]}>
-              <Text style={styles.toolIconText}>{tool.title.charAt(0)}</Text>
+              <Text style={styles.toolIconText}>{tool.mark}</Text>
             </View>
             <Text style={styles.toolTitle}>{tool.title}</Text>
             <Text style={styles.toolSubtitle}>{tool.subtitle}</Text>
-            {tool.status === 'soon' && <Text style={styles.soonBadge}>Sắp ra mắt</Text>}
+            {tool.status === 'soon' && (
+              <View style={styles.soonBadge}>
+                <Text style={styles.soonBadgeText}>Sắp có</Text>
+              </View>
+            )}
           </TouchableOpacity>
         ))}
       </View>
@@ -209,16 +253,19 @@ function ToolsScreen({ onStart }: { onStart: () => void }) {
 function FilesScreen() {
   return (
     <View style={styles.screen}>
-      <Text style={styles.pageTitle}>Tệp của bạn</Text>
-      <Text style={styles.pageDescription}>
-        Những file PDF đã tạo sẽ được lưu trong lịch sử trên máy.
-      </Text>
+      <PageIntro
+        eyebrow="Kho file"
+        title="Quản lý PDF đã tạo"
+        description="Các file hoàn thành sẽ được gom lại để mở, chia sẻ hoặc xóa khỏi lịch sử."
+      />
 
-      <View style={styles.filePanel}>
-        <Text style={styles.filePanelIcon}>□</Text>
-        <Text style={styles.emptyTitle}>Chưa có file đã tạo</Text>
+      <View style={styles.emptyPanel}>
+        <View style={styles.emptyIcon}>
+          <Text style={styles.emptyIconText}>PDF</Text>
+        </View>
+        <Text style={styles.emptyTitle}>Chưa có file nào</Text>
         <Text style={styles.emptyDescription}>
-          Khi mốc tạo PDF hoàn thành, bạn sẽ xem, chia sẻ và xóa file ngay tại đây.
+          Tệp đầu tiên sẽ xuất hiện ngay sau khi bạn tạo PDF từ ảnh.
         </Text>
       </View>
     </View>
@@ -228,26 +275,33 @@ function FilesScreen() {
 function ScanScreen() {
   return (
     <View style={styles.screen}>
-      <Text style={styles.pageTitle}>Ảnh sang PDF</Text>
-      <Text style={styles.pageDescription}>
-        Luồng chính của TinPDF: chọn ảnh, sắp xếp, cấu hình A4 và tạo PDF.
-      </Text>
+      <PageIntro
+        eyebrow="Quét"
+        title="Tạo PDF từ ảnh"
+        description="Luồng chính của TinPDF: chọn ảnh, kiểm tra thứ tự, đặt tên và xuất PDF."
+      />
 
-      <View style={styles.workflowPanel}>
-        <Step number="1" title="Chọn ảnh" detail="Lấy ảnh từ thư viện điện thoại." />
-        <Step number="2" title="Sắp xếp" detail="Đổi thứ tự, xóa ảnh thừa, thêm ảnh mới." />
-        <Step number="3" title="Tạo PDF" detail="Xuất file A4 dọc với margin nhỏ." />
+      <View style={styles.scanCard}>
+        <View style={styles.scanVisual}>
+          <View style={styles.scanSheetBack} />
+          <View style={styles.scanSheetFront}>
+            <Text style={styles.scanSheetTitle}>A4</Text>
+            <View style={styles.scanLineLong} />
+            <View style={styles.scanLine} />
+            <View style={styles.scanLineShort} />
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.primaryButtonWide} activeOpacity={0.88}>
+          <Text style={styles.heroButtonMark}>+</Text>
+          <Text style={styles.primaryButtonText}>Chọn ảnh từ thư viện</Text>
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.primaryButtonWide} activeOpacity={0.85}>
-        <Text style={styles.primaryButtonIcon}>+</Text>
-        <Text style={styles.primaryButtonText}>Chọn ảnh từ thư viện</Text>
-      </TouchableOpacity>
-
-      <View style={styles.noteBox}>
-        <Text style={styles.noteText}>
-          Mốc này mới dựng giao diện nền. Tính năng chọn ảnh thật sẽ được thêm ở mốc 6.2.
-        </Text>
+      <View style={styles.workflowPanel}>
+        <Step number="1" title="Chọn ảnh" detail="Lấy một hoặc nhiều ảnh từ thư viện." />
+        <Step number="2" title="Kiểm tra" detail="Xem lại ảnh trước khi tạo file." />
+        <Step number="3" title="Xuất PDF" detail="Tạo file A4 dọc và lưu vào lịch sử." />
       </View>
     </View>
   );
@@ -256,41 +310,84 @@ function ScanScreen() {
 function SettingsScreen() {
   return (
     <View style={styles.screen}>
-      <Text style={styles.pageTitle}>Cài đặt</Text>
-      <Text style={styles.pageDescription}>
-        Các lựa chọn mặc định cho bản MVP, tối ưu cho người dùng mới.
-      </Text>
+      <PageIntro
+        eyebrow="Thiết lập"
+        title="Cấu hình mặc định"
+        description="Các lựa chọn này giúp bản đầu hoạt động nhất quán và dễ hiểu."
+      />
 
-      <SettingRow label="Tên app" value="TinPDF" />
-      <SettingRow label="Khổ giấy mặc định" value="A4" />
-      <SettingRow label="Hướng giấy" value="Dọc" />
-      <SettingRow label="Margin" value="Nhỏ" />
-      <SettingRow label="Xử lý file" value="Offline trên máy" />
-      <SettingRow label="Phiên bản" value="0.1.0" />
+      <View style={styles.settingsList}>
+        <SettingRow label="Tên app" value="TinPDF" />
+        <SettingRow label="Khổ giấy" value="A4" />
+        <SettingRow label="Hướng giấy" value="Dọc" />
+        <SettingRow label="Margin" value="Nhỏ" />
+        <SettingRow label="Xử lý file" value="Offline" />
+        <SettingRow label="Phiên bản" value="0.1.0" />
+      </View>
     </View>
   );
 }
 
-function Shortcut({
+function PageIntro({
+  eyebrow,
   title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <View style={styles.pageIntro}>
+      <Text style={styles.pageEyebrow}>{eyebrow}</Text>
+      <Text style={styles.pageTitle}>{title}</Text>
+      <Text style={styles.pageDescription}>{description}</Text>
+    </View>
+  );
+}
+
+function SectionHeader({ title, action }: { title: string; action: string }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionAction}>{action}</Text>
+    </View>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.metricCard}>
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function QuickAction({
+  title,
+  mark,
   tone,
   disabled,
   onPress,
 }: {
   title: string;
+  mark: string;
   tone: string;
   disabled?: boolean;
   onPress?: () => void;
 }) {
   return (
     <TouchableOpacity
-      style={[styles.shortcutCard, disabled && styles.disabledCard]}
-      activeOpacity={disabled ? 1 : 0.85}
+      style={[styles.quickCard, disabled && styles.disabledCard]}
+      activeOpacity={disabled ? 1 : 0.86}
       onPress={disabled ? undefined : onPress}
     >
-      <View style={[styles.shortcutMark, { backgroundColor: tone }]} />
-      <Text style={styles.shortcutTitle}>{title}</Text>
-      {disabled && <Text style={styles.shortcutMeta}>Sau</Text>}
+      <View style={[styles.quickMark, { backgroundColor: tone }]}>
+        <Text style={styles.quickMarkText}>{mark}</Text>
+      </View>
+      <Text style={styles.quickTitle}>{title}</Text>
+      {disabled && <Text style={styles.quickMeta}>Sau</Text>}
     </TouchableOpacity>
   );
 }
@@ -321,137 +418,198 @@ function SettingRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f2f4f8',
+    backgroundColor: '#f7f3ef',
     paddingTop: androidStatusBarHeight,
   },
   appShell: {
     flex: 1,
-    backgroundColor: '#f2f4f8',
+    backgroundColor: '#f7f3ef',
   },
   header: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+    paddingHorizontal: 22,
+    paddingBottom: 14,
     paddingTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#f2f4f8',
+  },
+  brandGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  brandMark: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    backgroundColor: '#10131c',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#10131c',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  brandMarkText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '900',
   },
   logo: {
-    color: '#111827',
-    fontSize: 28,
-    fontWeight: '800',
+    color: '#10131c',
+    fontSize: 27,
+    fontWeight: '900',
   },
   headerSubtitle: {
-    color: '#6b7280',
-    fontSize: 14,
-    marginTop: 2,
+    color: '#7d746f',
+    fontSize: 13,
+    marginTop: 1,
+    fontWeight: '700',
   },
   profileButton: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: 8,
     backgroundColor: '#ffffff',
-    borderColor: '#d8dee9',
+    borderColor: '#eadfd8',
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#6b5f5a',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 9,
+    elevation: 3,
   },
   profileInitial: {
-    color: '#dc2626',
+    color: '#e11d48',
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   content: {
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 26,
   },
   screen: {
-    gap: 16,
+    gap: 18,
   },
-  searchBox: {
-    height: 48,
+  heroCard: {
+    minHeight: 272,
     borderRadius: 8,
-    backgroundColor: '#ffffff',
-    borderColor: '#d8dee9',
-    borderWidth: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
+    backgroundColor: '#10131c',
+    padding: 22,
+    overflow: 'hidden',
+    shadowColor: '#10131c',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 7,
   },
-  searchText: {
-    color: '#9ca3af',
-    fontSize: 16,
+  heroTopLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
   },
-  primaryPanel: {
+  heroKicker: {
+    color: '#f9fafb',
+    fontSize: 13,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  heroBadge: {
     borderRadius: 8,
-    backgroundColor: '#ffffff',
-    borderColor: '#e1e6ef',
-    borderWidth: 1,
-    padding: 18,
-    gap: 14,
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  primaryIcon: {
-    width: 56,
-    height: 56,
+  heroBadgeText: {
+    color: '#fbbf24',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  heroTitle: {
+    color: '#ffffff',
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '900',
+    maxWidth: '88%',
+  },
+  heroText: {
+    color: '#d6d3d1',
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 12,
+    maxWidth: '88%',
+  },
+  heroButton: {
+    height: 52,
     borderRadius: 8,
-    backgroundColor: '#fee2e2',
+    backgroundColor: '#e11d48',
+    marginTop: 22,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 9,
   },
-  primaryIconText: {
-    color: '#b91c1c',
+  heroButtonMark: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  heroButtonText: {
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '900',
   },
-  primaryCopy: {
-    gap: 5,
-  },
-  sectionEyebrow: {
-    color: '#dc2626',
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  primaryTitle: {
-    color: '#111827',
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  primaryDescription: {
-    color: '#4b5563',
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  primaryButton: {
-    height: 48,
+  heroDecorOne: {
+    position: 'absolute',
+    right: -22,
+    top: 74,
+    width: 92,
+    height: 120,
     borderRadius: 8,
-    backgroundColor: '#dc2626',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    backgroundColor: '#fbbf24',
+    opacity: 0.16,
+    transform: [{ rotate: '14deg' }],
   },
-  primaryButtonWide: {
-    height: 52,
+  heroDecorTwo: {
+    position: 'absolute',
+    right: 24,
+    bottom: -18,
+    width: 76,
+    height: 76,
     borderRadius: 8,
-    backgroundColor: '#dc2626',
+    backgroundColor: '#14b8a6',
+    opacity: 0.18,
+    transform: [{ rotate: '-10deg' }],
+  },
+  metricRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    gap: 10,
   },
-  primaryButtonIcon: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '700',
+  metricCard: {
+    flex: 1,
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    borderColor: '#eadfd8',
+    borderWidth: 1,
+    padding: 14,
   },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+  metricValue: {
+    color: '#10131c',
+    fontSize: 19,
+    fontWeight: '900',
+  },
+  metricLabel: {
+    color: '#7d746f',
+    fontSize: 11,
     fontWeight: '800',
+    marginTop: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -459,77 +617,125 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sectionTitle: {
-    color: '#111827',
+    color: '#10131c',
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   sectionAction: {
-    color: '#dc2626',
-    fontSize: 14,
-    fontWeight: '700',
+    color: '#e11d48',
+    fontSize: 13,
+    fontWeight: '900',
   },
-  emptyState: {
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e1e6ef',
-    borderStyle: 'dashed',
-    backgroundColor: '#ffffff',
-    padding: 18,
-    gap: 7,
-  },
-  emptyTitle: {
-    color: '#111827',
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  emptyDescription: {
-    color: '#6b7280',
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  shortcutGrid: {
+  quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  shortcutCard: {
-    width: '47.8%',
-    minHeight: 86,
+  quickCard: {
+    width: '48.1%',
+    minHeight: 118,
     borderRadius: 8,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#e1e6ef',
+    borderColor: '#eadfd8',
     padding: 14,
     justifyContent: 'space-between',
+    shadowColor: '#6b5f5a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
   disabledCard: {
-    opacity: 0.62,
+    opacity: 0.58,
   },
-  shortcutMark: {
-    width: 22,
-    height: 6,
-    borderRadius: 3,
+  quickMark: {
+    width: 44,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  shortcutTitle: {
-    color: '#111827',
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 20,
+  quickMarkText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '900',
   },
-  shortcutMeta: {
-    color: '#9ca3af',
+  quickTitle: {
+    color: '#10131c',
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 21,
+  },
+  quickMeta: {
+    color: '#9a8f89',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
+  },
+  recentList: {
+    gap: 10,
+  },
+  recentItem: {
+    minHeight: 82,
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#eadfd8',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+  },
+  recentThumb: {
+    width: 48,
+    height: 58,
+    borderRadius: 8,
+    backgroundColor: '#fff1f2',
+    borderColor: '#fecdd3',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentThumbText: {
+    color: '#be123c',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  recentCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  recentTitle: {
+    color: '#10131c',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  recentMeta: {
+    color: '#7d746f',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  pageIntro: {
+    gap: 8,
+  },
+  pageEyebrow: {
+    color: '#e11d48',
+    fontSize: 12,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   pageTitle: {
-    color: '#111827',
-    fontSize: 26,
+    color: '#10131c',
+    fontSize: 27,
+    lineHeight: 33,
     fontWeight: '900',
   },
   pageDescription: {
-    color: '#5b6472',
+    color: '#6f6762',
     fontSize: 15,
     lineHeight: 22,
+    fontWeight: '600',
   },
   toolsGrid: {
     flexDirection: 'row',
@@ -537,18 +743,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   toolCard: {
-    width: '30.9%',
-    minHeight: 142,
+    width: '48.1%',
+    minHeight: 160,
     borderRadius: 8,
     backgroundColor: '#ffffff',
-    borderColor: '#e1e6ef',
+    borderColor: '#eadfd8',
     borderWidth: 1,
-    padding: 12,
-    alignItems: 'center',
-    gap: 8,
+    padding: 14,
+    gap: 9,
+    shadowColor: '#6b5f5a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
   toolIcon: {
-    width: 38,
+    width: 48,
     height: 38,
     borderRadius: 8,
     alignItems: 'center',
@@ -556,50 +766,157 @@ const styles = StyleSheet.create({
   },
   toolIconText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 11,
     fontWeight: '900',
   },
   toolTitle: {
-    color: '#111827',
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: '800',
-    textAlign: 'center',
+    color: '#10131c',
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: '900',
   },
   toolSubtitle: {
-    color: '#6b7280',
-    fontSize: 11,
-    lineHeight: 15,
-    textAlign: 'center',
+    color: '#7d746f',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   soonBadge: {
-    color: '#9a3412',
-    backgroundColor: '#ffedd5',
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    fontSize: 10,
-    fontWeight: '800',
-    overflow: 'hidden',
+    alignSelf: 'flex-start',
+    borderRadius: 8,
+    backgroundColor: '#fff7ed',
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  filePanel: {
+  soonBadgeText: {
+    color: '#9a3412',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  emptyPanel: {
     borderRadius: 8,
     backgroundColor: '#ffffff',
-    borderColor: '#e1e6ef',
+    borderColor: '#eadfd8',
     borderWidth: 1,
     padding: 24,
     alignItems: 'center',
     gap: 10,
   },
-  filePanelIcon: {
-    color: '#dc2626',
-    fontSize: 44,
+  emptyIcon: {
+    width: 74,
+    height: 90,
+    borderRadius: 8,
+    backgroundColor: '#fff1f2',
+    borderColor: '#fecdd3',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyIconText: {
+    color: '#be123c',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  emptyTitle: {
+    color: '#10131c',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  emptyDescription: {
+    color: '#7d746f',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
     fontWeight: '600',
+  },
+  scanCard: {
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    borderColor: '#eadfd8',
+    borderWidth: 1,
+    padding: 18,
+    gap: 18,
+    shadowColor: '#6b5f5a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  scanVisual: {
+    minHeight: 170,
+    borderRadius: 8,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  scanSheetBack: {
+    position: 'absolute',
+    width: 112,
+    height: 138,
+    borderRadius: 8,
+    backgroundColor: '#fee2e2',
+    transform: [{ rotate: '-8deg' }],
+  },
+  scanSheetFront: {
+    width: 118,
+    height: 144,
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    padding: 16,
+    justifyContent: 'center',
+    gap: 10,
+    shadowColor: '#10131c',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  scanSheetTitle: {
+    color: '#e11d48',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  scanLineLong: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#cbd5e1',
+    width: '100%',
+  },
+  scanLine: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#e2e8f0',
+    width: '78%',
+  },
+  scanLineShort: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#e2e8f0',
+    width: '54%',
+  },
+  primaryButtonWide: {
+    height: 54,
+    borderRadius: 8,
+    backgroundColor: '#e11d48',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '900',
   },
   workflowPanel: {
     borderRadius: 8,
     backgroundColor: '#ffffff',
-    borderColor: '#e1e6ef',
+    borderColor: '#eadfd8',
     borderWidth: 1,
     padding: 16,
     gap: 16,
@@ -609,15 +926,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   stepNumber: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#fee2e2',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#10131c',
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepNumberText: {
-    color: '#b91c1c',
+    color: '#ffffff',
     fontSize: 14,
     fontWeight: '900',
   },
@@ -626,33 +943,24 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   stepTitle: {
-    color: '#111827',
+    color: '#10131c',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   stepDetail: {
-    color: '#6b7280',
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  noteBox: {
-    borderRadius: 8,
-    backgroundColor: '#eff6ff',
-    borderColor: '#bfdbfe',
-    borderWidth: 1,
-    padding: 14,
-  },
-  noteText: {
-    color: '#1e3a8a',
+    color: '#7d746f',
     fontSize: 13,
     lineHeight: 19,
     fontWeight: '600',
+  },
+  settingsList: {
+    gap: 10,
   },
   settingRow: {
     minHeight: 58,
     borderRadius: 8,
     backgroundColor: '#ffffff',
-    borderColor: '#e1e6ef',
+    borderColor: '#eadfd8',
     borderWidth: 1,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -661,48 +969,70 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   settingLabel: {
-    color: '#111827',
+    color: '#10131c',
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
     flex: 1,
   },
   settingValue: {
-    color: '#6b7280',
+    color: '#7d746f',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
     textAlign: 'right',
     flexShrink: 1,
   },
-  tabBar: {
-    minHeight: 84 + bottomSystemGap,
-    paddingTop: 10,
+  tabWrap: {
+    paddingHorizontal: 14,
     paddingBottom: bottomSystemGap,
-    paddingHorizontal: 8,
+    paddingTop: 8,
+    backgroundColor: '#f7f3ef',
+  },
+  tabBar: {
+    minHeight: 70,
+    borderRadius: 8,
     backgroundColor: '#ffffff',
-    borderTopColor: '#d8dee9',
-    borderTopWidth: 1,
+    borderColor: '#eadfd8',
+    borderWidth: 1,
     flexDirection: 'row',
+    paddingHorizontal: 6,
+    paddingVertical: 7,
+    shadowColor: '#6b5f5a',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     gap: 4,
   },
-  tabIcon: {
-    color: '#9ca3af',
-    fontSize: 20,
+  tabMark: {
+    width: 31,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#f4eee9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabMarkActive: {
+    backgroundColor: '#e11d48',
+  },
+  tabMarkText: {
+    color: '#8b817a',
+    fontSize: 12,
     fontWeight: '900',
   },
-  tabIconActive: {
-    color: '#dc2626',
+  tabMarkTextActive: {
+    color: '#ffffff',
   },
   tabLabel: {
-    color: '#8a93a3',
-    fontSize: 11,
-    fontWeight: '700',
+    color: '#8b817a',
+    fontSize: 10,
+    fontWeight: '800',
   },
   tabLabelActive: {
-    color: '#dc2626',
+    color: '#e11d48',
   },
 });
